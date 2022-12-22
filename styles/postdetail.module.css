@@ -1,0 +1,13 @@
+.postdetail{
+  position:relative;
+}
+.tabsContainer{
+  position:relative;
+  left:10rem;
+  top:10%;
+}
+.tabs{
+  color:white;
+  font-weight: bold;
+  background:inherit
+}
