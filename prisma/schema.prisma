@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,8 +7,396 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model categories {
+  id          Int     @id @default(autoincrement())
+  level       Int?
+  title       String  @db.VarChar(200)
+  description String? @db.VarChar(100)
+  slug        String? @db.VarChar(200)
+  link        String? @db.VarChar(50)
+  keywords    String? @db.VarChar(200)
+  parent      Int     @default(0)
+  sort        Int?
+}
+
+model cities {
+  id           Int       @id @default(autoincrement()) @db.UnsignedMediumInt
+  name         String    @db.VarChar(255)
+  state_id     Int       @db.UnsignedMediumInt
+  state_code   String    @db.VarChar(255)
+  country_id   Int       @db.UnsignedMediumInt
+  country_code String    @db.Char(2)
+  latitude     Decimal   @db.Decimal(10, 8)
+  longitude    Decimal   @db.Decimal(11, 8)
+  created_at   DateTime  @default(dbgenerated("'2014-01-01 06:31:01'")) @db.Timestamp(0)
+  updated_at   DateTime  @default(now()) @db.Timestamp(0)
+  flag         Boolean   @default(true)
+  wikiDataId   String?   @db.VarChar(255)
+  states       states    @relation(fields: [state_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cities_ibfk_1")
+  countries    countries @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cities_ibfk_2")
+
+  @@index([state_id], map: "cities_test_ibfk_1")
+  @@index([country_id], map: "cities_test_ibfk_2")
+}
+
+model collaborators {
+  user_id  Int
+  topic_id Int
+  User    User  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "collaborators_ibfk_1")
+  topics   topics @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "collaborators_ibfk_2")
+
+  @@id([user_id, topic_id])
+  @@index([topic_id], map: "topic_id")
+}
+
+model comments {
+  id        String  @id
+  content   String?
+  published Boolean @default(false)
+  topic_id  Int?
+  user_id   Int?
+  topics    topics? @relation(fields: [topic_id], references: [id])
+  User     User?  @relation(fields: [user_id], references: [id])
+
+  @@index([topic_id], map: "comments_topic_id_fkey")
+  @@index([user_id], map: "comments_user_id_fkey")
+}
+
+model countries {
+  id              Int       @id @default(autoincrement()) @db.UnsignedMediumInt
+  name            String    @db.VarChar(100)
+  iso3            String?   @db.Char(3)
+  numeric_code    String?   @db.Char(3)
+  iso2            String?   @db.Char(2)
+  phonecode       String?   @db.VarChar(255)
+  capital         String?   @db.VarChar(255)
+  currency        String?   @db.VarChar(255)
+  currency_name   String?   @db.VarChar(255)
+  currency_symbol String?   @db.VarChar(255)
+  tld             String?   @db.VarChar(255)
+  native          String?   @db.VarChar(255)
+  region          String?   @db.VarChar(255)
+  subregion       String?   @db.VarChar(255)
+  timezones       String?   @db.Text
+  translations    String?   @db.Text
+  latitude        Decimal?  @db.Decimal(10, 8)
+  longitude       Decimal?  @db.Decimal(11, 8)
+  emoji           String?
+  emojiU          String?
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime  @default(now()) @db.Timestamp(0)
+  flag            Boolean   @default(true)
+  wikiDataId      String?   @db.VarChar(255)
+  cities          cities[]
+  states          states[]
+}
+
+model data_types {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(200)
+  description String?   @db.VarChar(255)
+  orderby     Int       @default(0)
+  library     library[]
+}
+
+model email_template {
+  id        Int    @id @default(autoincrement())
+  title     String @db.VarChar(100)
+  html_code String @db.Text
+  status    Int    @default(1)
+}
+
+model library {
+  id           Int        @id @default(autoincrement())
+  title        String?    @db.Text
+  clause_type  String?    @db.VarChar(200)
+  word_count   Int?
+  data_type_id Int
+  uid          Int?       @default(1)
+  featured     Int?       @default(0)
+  cdate        DateTime   @default(now()) @db.DateTime(0)
+  status       Int?       @default(1)
+  data_types   data_types @relation(fields: [data_type_id], references: [id])
+
+  @@index([data_type_id], map: "library_data_type_id_fkey")
+}
+
+model location_data {
+  id     Int    @id @default(autoincrement())
+  locid  Int
+  title  String @db.VarChar(255)
+  uid    Int    @default(1)
+  status Int    @default(1)
+}
+
+model locations {
+  id          Int    @id @default(autoincrement())
+  title       String @db.VarChar(200)
+  description String @db.Text
+  altname     String @db.VarChar(100)
+  areas       String @db.VarChar(200)
+  state_name  String @db.VarChar(100)
+  country     String @db.VarChar(100)
+  status      Int    @default(1)
+}
+
+model logs {
+  id    Int      @id @default(autoincrement())
+  uid   Int
+  ip    String?  @db.VarChar(100)
+  ldate DateTime @default(now()) @db.DateTime(0)
+}
+
+model messages {
+  id       Int      @id @default(autoincrement())
+  message  String   @db.Text
+  cdate    DateTime @default(now()) @db.Timestamp(0)
+  uid      Int?
+  topic_id Int?
+}
+
+model notifications {
+  id                 Int      @id
+  creation_date_time DateTime @db.DateTime(0)
+  view_date_time     DateTime @db.DateTime(0)
+  user_id            Int
+  notification_text  String   @db.VarChar(255)
+  is_viewed          Int      @default(0)
+}
+
+model projects {
+  ID               Int                  @id @default(autoincrement())
+  Name             String               @db.VarChar(255)
+  category_id      Int?
+  URL              String?              @db.VarChar(255)
+  LogoURL          String               @db.VarChar(255)
+  wpURL            String               @db.VarChar(200)
+  feedURL          String               @db.VarChar(200)
+  ProjectEmail     String               @db.VarChar(100)
+  SiteTheme        String?              @db.VarChar(255)
+  ContactInfo      String?              @db.VarChar(255)
+  DefaultAdTitle   String?              @db.VarChar(200)
+  FromSite         String?              @db.VarChar(200)
+  Category         String?              @db.VarChar(255)
+  Address          String               @db.VarChar(50)
+  State            String               @db.VarChar(50)
+  Pincode          String               @db.VarChar(50)
+  CountryGEO       Int?                 @default(1)
+  CityGEO          String?              @db.Text
+  Tags             String?              @db.Text
+  IdeaBox          String?              @db.Text
+  RefURLs          String?              @db.Text
+  FB               String?              @db.VarChar(255)
+  Twitter          String?              @db.VarChar(255)
+  Gmail            String?              @db.VarChar(255)
+  ga_view_id       Int?                 @default(0)
+  CMS              String?              @db.VarChar(100)
+  SiteID           Int?
+  Status           Int                  @default(1)
+  GDrive           String?              @db.VarChar(255)
+  GACode           String?              @db.VarChar(200)
+  RegDate          DateTime             @db.Date
+  ExpDate          DateTime             @db.Date
+  Hosting          String               @db.VarChar(200)
+  uid              Int
+  lid              Int
+  cid              Int                  @default(46)
+  priority         projects_priority    @default(Moderate)
+  gender           projects_gender      @default(All)
+  incomelevel      projects_incomelevel @default(Medium)
+  cdate            DateTime             @default(now()) @db.DateTime(0)
+  pageupdate       DateTime             @default(now()) @db.DateTime(0)
+  postupdate       DateTime             @default(now()) @db.DateTime(0)
+  post_cron_status Int                  @default(0)
+  page_cron_status Int                  @default(0)
+  EmailByJetpack   String               @db.VarChar(100)
+  CategoryName     String               @db.VarChar(100)
+  order_id         Int
+  search_console   Int                  @default(0)
+  mainKeyword      String               @db.VarChar(100)
+  PageKeywords     String?              @db.VarChar(250)
+  MetaDesc         String?              @db.VarChar(250)
+  MetaKeywords     String?              @db.VarChar(200)
+  total_posts      Int?
+}
+
+model revisions {
+  id             Int      @id @default(autoincrement())
+  tid            Int
+  uid            Int
+  title          String?  @db.VarChar(220)
+  content        String?  @db.Text
+  content_status String?  @default("Not Started") @db.VarChar(20)
+  feedback       String?  @db.VarChar(255)
+  google_doc     String?  @db.VarChar(220)
+  cdate          DateTime @default(now()) @db.DateTime(0)
+  udate          DateTime @default(now()) @db.DateTime(0)
+  adate          DateTime @default(now()) @db.DateTime(0)
+  status         Int      @default(1)
+}
+
+model states {
+  id           Int       @id @default(autoincrement()) @db.UnsignedMediumInt
+  name         String    @db.VarChar(255)
+  country_id   Int       @db.UnsignedMediumInt
+  country_code String    @db.Char(2)
+  fips_code    String?   @db.VarChar(255)
+  iso2         String?   @db.VarChar(255)
+  type         String?
+  latitude     Decimal?  @db.Decimal(10, 8)
+  longitude    Decimal?  @db.Decimal(11, 8)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime  @default(now()) @db.Timestamp(0)
+  flag         Boolean   @default(true)
+  wikiDataId   String?   @db.VarChar(255)
+  countries    countries @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "country_region_final")
+  cities       cities[]
+
+  @@index([country_id], map: "country_region")
+}
+
+model synonyms {
+  synonym_id Int     @id @default(autoincrement())
+  word_id    Int?
+  synonym    String? @db.VarChar(50)
+  words      words?  @relation(fields: [word_id], references: [word_id], onDelete: Cascade, map: "FK_synonyms_word_id")
+
+  @@index([word_id], map: "FK_synonyms_word_id")
+}
+
+model templates {
+  id      Int     @id @default(autoincrement())
+  title   String  @db.VarChar(200)
+  content String? @db.Text
+  status  Int     @default(1)
+}
+
+model textDictionary {
+  id       Int    @id @default(autoincrement())
+  word     String @db.VarChar(200)
+  synonyms String @db.Text
+}
+
+model topics {
+  id             Int             @id @default(autoincrement())
+  post_id        Int?
+  title          String?         @db.VarChar(80)
+  post_excerpt   String?         @db.Text
+  description    String?         @db.LongText
+  post_url       String?         @db.VarChar(200)
+  shortenurl     String?         @db.VarChar(200)
+  post_source    String?         @db.VarChar(200)
+  post_parent    Int?
+  post_tags      String?         @db.VarChar(200)
+  post_image     String?         @db.VarChar(200)
+  post_status    String?         @db.VarChar(20)
+  wp_live_status String?         @db.VarChar(30)
+  category_id    Int?
+  content_status String?         @default("Pending") @db.VarChar(200)
+  assign_status  String?         @default("0") @db.VarChar(20)
+  post_type      String          @default("Normal") @db.VarChar(15)
+  word_count     Int?            @default(2200)
+  post_keyword   String?         @db.TinyText
+  priority       String?         @default("Medium") @db.VarChar(12)
+  post_views     Int?            @default(0)
+  project_id     Int             @default(0)
+  user_id        Int?
+  created_at     DateTime        @default(now()) @db.DateTime(0)
+  updated_at     DateTime?       @db.DateTime(0)
+  status         Int             @default(1)
+  User          User?          @relation(fields: [user_id], references: [id])
+  collaborators  collaborators[]
+  comments       comments[]
+
+  @@index([user_id], map: "topics_user_id_fkey")
+}
+
+model user2category {
+  id    Int  @id @default(autoincrement())
+  uid   Int?
+  catid Int?
+}
+
+model user2topics {
+  id    Int      @id @default(autoincrement())
+  uid   Int
+  tid   Int
+  cdate DateTime @default(now()) @db.Timestamp(0)
+}
+
+model user_details {
+  id                Int       @id @default(autoincrement())
+  class             String?   @db.VarChar(200)
+  pass_code         String?   @db.VarChar(200)
+  college           String?   @db.VarChar(200)
+  interest          String?   @db.VarChar(200)
+  linkedin          String?   @db.VarChar(200)
+  start_date        DateTime? @db.Date
+  end_date          DateTime? @db.Date
+  about             String?   @db.Text
+  writing           String?   @db.VarChar(100)
+  research          String?   @db.VarChar(100)
+  passion           String?   @db.VarChar(100)
+  attitude          String?   @db.VarChar(100)
+  app_status        String    @default("On Hold") @db.VarChar(12)
+  batch             String?   @db.VarChar(10)
+  referred_by       String?   @db.VarChar(20)
+  internship_status String?   @default("Open") @db.VarChar(10)
+  pub_link          String?   @db.VarChar(200)
+  category          Int       @default(132)
+  address           String?   @db.Text
+  mobile            String?   @db.VarChar(200)
+  userId            Int?
+}
+
 model User {
-  id        Int     @id @default(autoincrement())
-  email     String  @unique
-  password  String
+  id              Int             @id @default(autoincrement())
+  first_name      String?         @db.VarChar(200)
+  last_name       String?         @db.VarChar(200)
+  email           String          @db.VarChar(100)
+  password        String?         @db.VarChar(200)
+  activation_code String?         @db.VarChar(100)
+  is_active       Int?            @default(0)
+  user_type       String?         @db.VarChar(15)
+  cdate           DateTime        @default(now()) @db.DateTime(0)
+  collaborators   collaborators[]
+  comments        comments[]
+  topics          topics[]
+
+  @@map("users")
+}
+
+model wcategories {
+  id      Int    @id @default(autoincrement())
+  name    String @db.VarChar(100)
+  term_id Int
+  pid     Int
+  status  Int    @default(1)
+}
+
+model words {
+  word_id  Int        @id @default(autoincrement())
+  word     String?    @db.VarChar(50)
+  synonyms synonyms[]
+}
+
+enum projects_priority {
+  High
+  Moderate
+  Low
+  EMPTY_ENUM_VALUE @map("")
+}
+
+enum projects_gender {
+  All
+  Male
+  Female
+  Trans
+}
+
+enum projects_incomelevel {
+  Poor
+  Medium
+  High_Networth    @map("High Networth")
+  EMPTY_ENUM_VALUE @map("")
 }
